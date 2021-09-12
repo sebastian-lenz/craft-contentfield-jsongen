@@ -101,7 +101,7 @@ abstract class ExportTask
 
     if ($this->hasChanged($checksum)) {
       $this->createMetaData($content, $job, $state, $checksum);
-      file_put_contents($fileName, json_encode($content));
+      file_put_contents($fileName, json_encode($content, JSON_PRETTY_PRINT));
     }
   }
 
