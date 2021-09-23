@@ -7,7 +7,6 @@ use craft\web\Controller;
 use lenz\contentfield\json\Plugin as JsonPlugin;
 use lenz\contentfield\json\scope\State;
 use lenz\contentfield\jsongen\Plugin;
-use lenz\contentfield\jsongen\directory\DirectoryGenerator;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -53,17 +52,5 @@ class JsonController extends Controller
     }
 
     return $this->asJson($payload);
-  }
-
-  /**
-   * @return Response
-   */
-  public function actionDirectory(): Response {
-    $response = $this->response;
-    $response->headers->set('Content-Type', 'application/json');
-    $response->stream = new DirectoryGenerator();
-    $response->format = Response::FORMAT_RAW;
-
-    return $response;
   }
 }

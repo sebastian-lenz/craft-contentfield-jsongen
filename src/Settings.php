@@ -18,4 +18,14 @@ class Settings extends Model
    * @var string
    */
   public $outputPath = '@storage/json';
+
+  /**
+   * @var string
+   */
+  public $payloadPath = '/';
+
+  /**
+   * @var string
+   */
+  public $payloadSuffix = '.json';
 }

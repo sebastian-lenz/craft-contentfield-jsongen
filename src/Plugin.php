@@ -16,6 +16,7 @@ use lenz\contentfield\json\scope\Project;
 use lenz\contentfield\jsongen\exporter\QueueManager;
 use lenz\contentfield\jsongen\generators\GeneratorUrlRule;
 use lenz\contentfield\jsongen\helpers\JsonUrlRule;
+use lenz\contentfield\jsongen\helpers\PathHelper;
 use Throwable;
 use yii\base\Event;
 
@@ -50,6 +51,11 @@ class Plugin extends BasePlugin
     });
 
     Event::on(Application::class, Application::EVENT_INIT, function() {
+      $payloadPath = PathHelper::normalize($this->settings->payloadPath);
+      if (!empty($payloadPath)) {
+        $payloadPath = '/' . $payloadPath;
+      }
+
       Craft::$app->urlManager->addRules([
         new JsonUrlRule([
           'route' => 'contentfield-jsongen/json/index',
@@ -57,13 +63,9 @@ class Plugin extends BasePlugin
         ]),
         new GeneratorUrlRule(),
         new UrlRule([
-          'pattern' => '/api/payloads/<name>',
+          'pattern' => "$payloadPath/<name>",
           'route' => 'contentfield-jsongen/json/payload',
-          'suffix' => '.json',
-        ]),
-        new UrlRule([
-          'pattern' => '/api/directory',
-          'route' => 'contentfield-jsongen/json/directory',
+          'suffix' => $this->settings->payloadSuffix,
         ]),
       ]);
     });
