@@ -2,21 +2,17 @@
 
 namespace lenz\contentfield\jsongen\generators;
 
-use Craft;
 use craft\base\ElementInterface;
 use craft\models\Site;
-use craft\web\Request;
+use Exception;
 use Generator;
 use lenz\contentfield\json\events\ProjectEvent;
-use lenz\contentfield\json\helpers\AbstractManager;
 use lenz\contentfield\json\Plugin;
 use lenz\contentfield\json\scope\element\Structure;
 use lenz\contentfield\json\scope\PropertyCollection;
 use lenz\contentfield\json\scope\State;
 use lenz\contentfield\jsongen\exporter\ExportJob;
-use lenz\contentfield\jsongen\helpers\UrlRuleHelper;
-use yii\base\InvalidConfigException;
-use yii\web\UrlManager;
+use lenz\contentfield\jsongen\exporter\ExportTask;
 
 /**
  * Interface ElementFilterGenerator
@@ -31,7 +27,6 @@ abstract class ElementFilterGenerator extends ElementGenerator
 
   /**
    * @inheritDoc
-   * @noinspection PhpExpressionResultUnusedInspection
    */
   public function getExportTasks(ExportJob $job): Generator {
     foreach ($this->getAffectedElements($job->getSite()) as $element)
@@ -40,11 +35,17 @@ abstract class ElementFilterGenerator extends ElementGenerator
 
       yield new GeneratorExportTask($fileName, function(ExportJob $job, State $state) use ($element, $params) {
         $this->matchedParams = $params;
-        $this->validateParams($params);
+        if (!$this->validateParams($params)) {
+          throw new Exception('Invalid params');
+        }
 
         $state->dependsOnElement($element);
         $state->useCache = false;
         $result = Plugin::toJson($element, Plugin::MODE_DEFAULT, $state);
+
+        if (is_object($result)) {
+          $this->injectMetadata($result);
+        }
 
         $this->matchedParams = null;
         return $result;
@@ -119,6 +120,31 @@ abstract class ElementFilterGenerator extends ElementGenerator
 
     $this->_structures = $result;
     return $result;
+  }
+
+  /**
+   * @param object $result
+   */
+  protected function injectMetadata(object $result) {
+    if (!isset($result->{ExportTask::META_ATTRIBUTE})) {
+      $result->{ExportTask::META_ATTRIBUTE} = (object)[];
+    }
+
+    $uid = md5(implode(';', [
+      $result->uid,
+      json_encode($this->matchedParams)
+    ]));
+
+    $result->{ExportTask::META_ATTRIBUTE}->generator = (object)[
+      'params' => $this->matchedParams,
+      'uid' => implode('-', [
+        substr($uid, 0, 8),
+        substr($uid, 8, 4),
+        substr($uid, 12, 4),
+        substr($uid, 16, 4),
+        substr($uid, 20),
+      ]),
+    ];
   }
 
   /**
