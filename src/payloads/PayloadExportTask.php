@@ -34,6 +34,20 @@ class PayloadExportTask extends ExportTask
    * @inheritDoc
    */
   protected function export(ExportJob $job, State $state) {
-    return $this->_payload;
+    return (object)$this->_payload->jsonSerialize();
+  }
+
+  /**
+   * @inheritDoc
+   */
+  protected function getType(): string {
+    return 'payload';
+  }
+
+  /**
+   * @inheritDoc
+   */
+  protected function hasPendingChanges(ExportJob $job): bool {
+    return true;
   }
 }

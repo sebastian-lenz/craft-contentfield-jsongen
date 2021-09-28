@@ -34,15 +34,15 @@ abstract class ElementFilterGenerator extends ElementGenerator
       $fileName = $job->toOutName($url);
 
       yield new GeneratorExportTask($fileName, function(ExportJob $job, State $state) use ($element, $params) {
-        $this->matchedParams = $params;
         if (!$this->validateParams($params)) {
           throw new Exception('Invalid params');
         }
 
         $state->dependsOnElement($element);
         $state->useCache = false;
-        $result = Plugin::toJson($element, Plugin::MODE_DEFAULT, $state);
+        $this->matchedParams = $params;
 
+        $result = Plugin::toJson($element, Plugin::MODE_DEFAULT, $state);
         if (is_object($result)) {
           $this->injectMetadata($result);
         }

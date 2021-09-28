@@ -71,4 +71,11 @@ class ElementExportTask extends ExportTask
 
     return Plugin::toJson($element, Plugin::MODE_DEFAULT, $state);
   }
+
+  /**
+   * @inheritDoc
+   */
+  protected function getType(): string {
+    return 'element';
+  }
 }

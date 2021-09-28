@@ -36,4 +36,11 @@ class GeneratorExportTask extends ExportTask
   protected function export(ExportJob $job, State $state) {
     return ($this->_callback)($job, $state);
   }
+
+  /**
+   * @inheritDoc
+   */
+  protected function getType(): string {
+    return 'generator';
+  }
 }

@@ -8,6 +8,7 @@ use craft\models\Site;
 use craft\web\Request;
 use lenz\contentfield\json\helpers\AbstractManager;
 use lenz\contentfield\jsongen\helpers\UrlRuleHelper;
+use lenz\craft\utils\helpers\ArrayHelper;
 use yii\base\InvalidConfigException;
 use yii\web\UrlManager;
 
@@ -85,6 +86,19 @@ abstract class ElementGenerator implements GeneratorInterface
 
   // Protected methods
   // -----------------
+
+  /**
+   * @param string $name
+   * @param mixed $defaultValue
+   * @return mixed
+   */
+  protected function getParam(string $name, $defaultValue) {
+    if (!is_array($this->matchedParams)) {
+      return $defaultValue;
+    }
+
+    return ArrayHelper::get($this->matchedParams, $name, $defaultValue);
+  }
 
   /**
    * @param array $params
