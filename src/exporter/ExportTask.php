@@ -135,12 +135,49 @@ abstract class ExportTask
     $metadata = $event->metadata;
     $content->{self::META_ATTRIBUTE} = $metadata;
 
-    $metadata->dependencies = $state->getDependencies();
+    $dependencies = $state->getDependencies();
+    $latestChange = $this->getLatestChange($job, $dependencies);
+
+    $metadata->type = $this->getType();
+    $metadata->dependencies = $dependencies;
     $metadata->checksum = $checksum;
     $metadata->requirements = $state->getRequirements();
-    $metadata->updated = $job->getTimestamp();
+    $metadata->updated = $latestChange ?? $job->getTimestamp();
 
     return $metadata;
+  }
+
+  /**
+   * @param ExportJob $job
+   * @param array $dependencies
+   * @return int|null
+   */
+  protected function getLatestChange(ExportJob $job, array $dependencies): ?int {
+    $tags = $job->getTagIndex();
+    $updated = 0;
+
+    try {
+      foreach ($dependencies as $dependency) {
+        $tag = $tags->getTagValue($dependency);
+        if (is_null($tag)) {
+          echo 'Unknown: ' . $dependency . "\n";
+          return null;
+        }
+
+        $updated = max($updated, $tag);
+      }
+
+      return $updated;
+    } catch (Exception $exception) {
+      return null;
+    }
+  }
+
+  /**
+   * @return string
+   */
+  protected function getType(): string {
+    return 'unknown';
   }
 
   /**
@@ -148,9 +185,6 @@ abstract class ExportTask
    * @return bool
    */
   protected function hasPendingChanges(ExportJob $job): bool {
-    $tags = $job->getTagIndex();
-    $updated = 0;
-
     try {
       $data = $this->loadMetaData();
       if (isset($data->checksum)) {
@@ -161,18 +195,10 @@ abstract class ExportTask
         return true;
       }
 
-      foreach ($data->dependencies as $dependency) {
-        $tag = $tags->getTagValue($dependency);
-        if (is_null($tag)) {
-          echo 'Unknown: ' . $dependency . "\n";
-          return true;
-        }
-
-        $updated = max($updated, $tag);
-      }
-
-      return $updated > $data->updated;
-    } catch (Exception $exception) {
+      $updated = $this->getLatestChange($job, $data->dependencies);
+      return is_null($updated) || $updated > $data->updated;
+    }
+    catch (Exception $exception) {
       return true;
     }
   }
