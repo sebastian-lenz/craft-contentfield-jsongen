@@ -13,6 +13,7 @@ use lenz\contentfield\json\scope\PropertyCollection;
 use lenz\contentfield\json\scope\State;
 use lenz\contentfield\jsongen\exporter\ExportJob;
 use lenz\contentfield\jsongen\exporter\ExportTask;
+use lenz\contentfield\jsongen\helpers\PathHelper;
 
 /**
  * Interface ElementFilterGenerator
@@ -29,22 +30,29 @@ abstract class ElementFilterGenerator extends ElementGenerator
    * @inheritDoc
    */
   public function getExportTasks(ExportJob $job): Generator {
+    $jsonFileName = \lenz\contentfield\jsongen\Plugin::getInstance()->settings->jsonFileName;
+
     foreach ($this->getAffectedElements($job->getSite()) as $element)
     foreach ($this->getUrlsForElement($element) as $url => $params) {
-      $fileName = $job->toOutName($url);
+      $fileName = $job->toOutName(PathHelper::join($url, $jsonFileName));
 
-      yield new GeneratorExportTask($fileName, function(ExportJob $job, State $state) use ($element, $params) {
+      yield new GeneratorExportTask($fileName, function(ExportJob $job, State $state) use ($url, $element, $params) {
         if (!$this->validateParams($params)) {
           throw new Exception('Invalid params');
         }
 
+        $this->matchedParams = $params;
+
+        $uid = self::generateUid($element->uid, $params);
         $state->dependsOnElement($element);
         $state->useCache = false;
-        $this->matchedParams = $params;
+        $state->metaData['generatorParams'] = $params;
+        $state->metaData['generatorUid'] = $uid;
+        $state->metaData['generatorUrl'] = Plugin::toAlias($url);
 
         $result = Plugin::toJson($element, Plugin::MODE_DEFAULT, $state);
         if (is_object($result)) {
-          $this->injectMetadata($result);
+          $this->injectMetadata($result, $uid);
         }
 
         $this->matchedParams = null;
@@ -124,26 +132,16 @@ abstract class ElementFilterGenerator extends ElementGenerator
 
   /**
    * @param object $result
+   * @param string $uid
    */
-  protected function injectMetadata(object $result) {
+  protected function injectMetadata(object $result, string $uid) {
     if (!isset($result->{ExportTask::META_ATTRIBUTE})) {
       $result->{ExportTask::META_ATTRIBUTE} = (object)[];
     }
 
-    $uid = md5(implode(';', [
-      $result->uid,
-      json_encode($this->matchedParams)
-    ]));
-
     $result->{ExportTask::META_ATTRIBUTE}->generator = (object)[
       'params' => $this->matchedParams,
-      'uid' => implode('-', [
-        substr($uid, 0, 8),
-        substr($uid, 8, 4),
-        substr($uid, 12, 4),
-        substr($uid, 16, 4),
-        substr($uid, 20),
-      ]),
+      'uid' => $uid,
     ];
   }
 
@@ -165,4 +163,24 @@ abstract class ElementFilterGenerator extends ElementGenerator
    * @param PropertyCollection $collection
    */
   protected function modifyProperties(PropertyCollection $collection) { }
+
+
+  // Static methods
+  // --------------
+
+  /**
+   * @param string $uid
+   * @param array $params
+   * @return string
+   */
+  static public function generateUid(string $uid, array $params): string {
+    $hash = md5(implode(';', [$uid, json_encode($params)]));
+    return implode('-', [
+      substr($hash, 0, 8),
+      substr($hash, 8, 4),
+      substr($hash, 12, 4),
+      substr($hash, 16, 4),
+      substr($hash, 20),
+    ]);
+  }
 }
