@@ -97,10 +97,11 @@ abstract class ExportTask
 
     $state = new State();
     $content = $this->export($job, $state);
+    $metadata = $this->createMetaData($content, $job, $state);
     $checksum = md5(json_encode($content));
 
     if ($this->hasChanged($checksum)) {
-      $this->createMetaData($content, $job, $state, $checksum);
+      $metadata->checksum = $checksum;
       file_put_contents($fileName, json_encode($content, JSON_PRETTY_PRINT));
     }
   }
@@ -120,10 +121,9 @@ abstract class ExportTask
    * @param object $content
    * @param ExportJob $job
    * @param State $state
-   * @param string $checksum
    * @return object
    */
-  protected function createMetaData(object $content, ExportJob $job, State $state, string $checksum): object {
+  protected function createMetaData(object $content, ExportJob $job, State $state): object {
     $event = new MetadataEvent([
       'content' => $content,
       'metadata' => (object)($content->{self::META_ATTRIBUTE} ?? []),
@@ -137,10 +137,10 @@ abstract class ExportTask
 
     $dependencies = $state->getDependencies();
     $latestChange = $this->getLatestChange($job, $dependencies);
+    sort($dependencies);
 
     $metadata->type = $this->getType();
     $metadata->dependencies = $dependencies;
-    $metadata->checksum = $checksum;
     $metadata->requirements = $state->getRequirements();
     $metadata->updated = $latestChange ?? $job->getTimestamp();
 

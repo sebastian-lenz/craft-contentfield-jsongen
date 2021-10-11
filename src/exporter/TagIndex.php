@@ -22,6 +22,11 @@ class TagIndex
   private $_maps = [];
 
   /**
+   * @var int
+   */
+  private $_now = 0;
+
+  /**
    * Known Tags:
    * - *
    * - element:{uid}
@@ -37,6 +42,7 @@ class TagIndex
    * @param ExportJob $job
    */
   public function __construct(ExportJob $job) {
+    $this->_now = $job->getTimestamp();
     $this->loadTags($job);
   }
 
@@ -63,14 +69,12 @@ class TagIndex
     $elementsSites = Table::ELEMENTS_SITES;
     $entries = Table::ENTRIES;
     $categories = Table::CATEGORIES;
-
-    $currentTimeDb = Db::prepareDateForDb($job->getTimestamp());
     $query = new Query();
 
     return $query
       ->select([
-        "$elements.id", "$elements.uid", "$elements.type", new Expression("UNIX_TIMESTAMP($elements.dateUpdated) as dateUpdated"),
-        "$entries.sectionId", "$entries.typeId", new Expression("UNIX_TIMESTAMP($entries.postDate) as postDate"),
+        "$elements.id", "$elements.uid", "$elements.type", "$elements.dateUpdated",
+        "$entries.sectionId", "$entries.typeId", "$entries.postDate", "$entries.expiryDate",
         "$categories.groupId"
       ])
       ->from($elements)
@@ -89,6 +93,7 @@ class TagIndex
       ->andWhere([
         'NOT IN', "$elements.type", [MatrixBlock::class, User::class],
       ])
+      /*
       ->andWhere([
         'or',
         ["$entries.postDate" => null],
@@ -101,7 +106,8 @@ class TagIndex
             ['>', "$entries.expiryDate", $currentTimeDb],
           ],
         ]
-      ]);
+      ])
+      */;
   }
 
   /**
@@ -140,10 +146,17 @@ class TagIndex
    * @param ExportJob $job
    */
   private function loadTags(ExportJob $job) {
+    $now = $this->_now;
+
     foreach ($this->createQuery($job)->all() as $row) {
-      $updated = intval($row['dateUpdated']);
-      if (!is_null($row['postDate'])) {
-        $updated = max($updated, intval($row['postDate']));
+      $updated = strtotime($row['dateUpdated'] . ' UTC');
+      foreach (['postDate', 'expiryDate'] as $dateField) {
+        $dateValue = $row[$dateField];
+        $dateValue = empty($dateValue) ? false : strtotime($dateValue . ' UTC');
+
+        if ($dateValue && $dateValue > $updated && $dateValue < $now) {
+          $updated = $dateValue;
+        }
       }
 
       $this->setUpdated('*', $updated);

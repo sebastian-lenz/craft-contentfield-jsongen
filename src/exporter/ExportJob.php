@@ -82,7 +82,7 @@ class ExportJob extends Component implements JobInterface, Serializable
   public function init() {
     parent::init();
 
-    $this->_now = new DateTime();
+    $this->_now = new DateTime('now', new \DateTimeZone('UTC'));
   }
 
   /**
