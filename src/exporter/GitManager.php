@@ -48,7 +48,7 @@ class GitManager
   }
 
   /**
-   *
+   * @throws Exception
    */
   public function tryCommit() {
     if (!$this->isRepository() || !$this->hasPendingChanges()) {
@@ -58,6 +58,17 @@ class GitManager
     $this->exec('add', '-A');
     $this->exec('commit', '-m', escapeshellarg('Content update, '. date(DateTime::ATOM)));
     $this->exec('push');
+  }
+
+  /**
+   * @throws Exception
+   */
+  public function tryPull() {
+    if (!$this->isRepository() || $this->hasPendingChanges()) {
+      return;
+    }
+
+    $this->exec('pull');
   }
 
 

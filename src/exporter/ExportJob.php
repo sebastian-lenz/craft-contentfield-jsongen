@@ -243,6 +243,8 @@ class ExportJob extends Component implements JobInterface, Serializable
    * @throws Throwable
    */
   private function beforeExecute() {
+    $this->getGit()->tryPull();
+
     QueueManager::removeJobsBySite($this->siteId);
     JsonPlugin::$ensureAssetTransforms = true;
     $this->ensureOutDir();
