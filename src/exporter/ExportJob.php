@@ -109,7 +109,11 @@ class ExportJob extends Component implements JobInterface, Serializable
    */
   public function getGit(): GitManager {
     if (!isset($this->_git)) {
-      $this->_git = new GitManager($this->outputPath);
+      $path = array_key_exists('CONTENT_JSONGEN_GIT_PATH', $_ENV)
+        ? $_ENV['CONTENT_JSONGEN_GIT_PATH']
+        : $this->outputPath;
+
+      $this->_git = new GitManager($path);
     }
 
     return $this->_git;

@@ -57,6 +57,7 @@ class GitManager
 
     $this->exec('add', '-A');
     $this->exec('commit', '-m', escapeshellarg('Content update, '. date(DateTime::ATOM)));
+    $this->exec('push');
   }
 
 
