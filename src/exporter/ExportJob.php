@@ -111,7 +111,11 @@ class ExportJob extends Component implements JobInterface, Serializable
     if (!isset($this->_git)) {
       $path = array_key_exists('CONTENT_JSONGEN_GIT_PATH', $_ENV)
         ? $_ENV['CONTENT_JSONGEN_GIT_PATH']
-        : $this->outputPath;
+        : null;
+
+      if (empty($path)) {
+        $path = $this->outputPath;
+      }
 
       $this->_git = new GitManager($path);
     }
@@ -243,12 +247,12 @@ class ExportJob extends Component implements JobInterface, Serializable
    * @throws Throwable
    */
   private function beforeExecute() {
-    $this->getGit()->tryPull();
-
     QueueManager::removeJobsBySite($this->siteId);
     JsonPlugin::$ensureAssetTransforms = true;
     $this->ensureOutDir();
     $this->ensureSite();
+
+    $this->getGit()->tryPull();
   }
 
   /**
