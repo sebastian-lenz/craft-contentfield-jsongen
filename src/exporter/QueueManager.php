@@ -15,20 +15,22 @@ class QueueManager
 {
   /**
    * @param int $delay
-   * @throws Exception
+   * @param array $options
+   * @throws Throwable
    */
-  static public function enqueueAllSites(int $delay = -1) {
+  static public function enqueueAllSites(int $delay = -1, array $options = []) {
     foreach (Craft::$app->getSites()->getAllSites() as $site) {
-      self::enqueueSite($site, $delay);
+      self::enqueueSite($site, $delay, $options);
     }
   }
 
   /**
    * @param Site $site
    * @param int $delay
-   * @throws Exception
+   * @param array $options
+   * @throws Throwable
    */
-  static public function enqueueSite(Site $site, int $delay = -1) {
+  static public function enqueueSite(Site $site, int $delay = -1, array $options = []) {
     static $enqueuedSites = [];
     if (in_array($site->id, $enqueuedSites)) {
       return;
@@ -36,9 +38,9 @@ class QueueManager
 
     $enqueuedSites[] = $site->id;
     $queue = Craft::$app->queue;
-    $job = new ExportJob([
+    $job = new ExportJob(array_merge([
       'siteId' => $site->id,
-    ]);
+    ], $options));
 
     if ($delay < 0) {
       $job->execute($queue);

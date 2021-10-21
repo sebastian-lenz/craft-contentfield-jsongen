@@ -185,6 +185,10 @@ abstract class ExportTask
    * @return bool
    */
   protected function hasPendingChanges(ExportJob $job): bool {
+    if ($job->isFullRebuild) {
+      return true;
+    }
+
     try {
       $data = $this->loadMetaData();
       if (isset($data->checksum)) {

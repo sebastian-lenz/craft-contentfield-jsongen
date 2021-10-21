@@ -21,6 +21,11 @@ use yii\base\Component;
 class ExportJob extends Component implements JobInterface, Serializable
 {
   /**
+   * @var bool
+   */
+  public $isFullRebuild = false;
+
+  /**
    * @var string
    */
   public $outputPath;
