@@ -36,6 +36,11 @@ class ExportJob extends Component implements JobInterface, Serializable
   public $siteId;
 
   /**
+   * @var bool
+   */
+  public $useGit = true;
+
+  /**
    * @var FileIndex
    */
   private $_fileIndex;
@@ -79,10 +84,14 @@ class ExportJob extends Component implements JobInterface, Serializable
    * Triggered when the exporter collects the available export sources.
    */
   const EVENT_REGISTER_EXPORT_SOURCES = 'registerExportSources';
+  /**
+   * @var mixed
+   */
 
 
   /**
    * @inheritDoc
+   * @throws Exception
    */
   public function init() {
     parent::init();
@@ -243,7 +252,7 @@ class ExportJob extends Component implements JobInterface, Serializable
   private function afterExecute() {
     $this->getFileIndex()->cleanUp();
 
-    if (!QueueManager::hasPendingJob()) {
+    if ($this->useGit && !QueueManager::hasPendingJob()) {
       $this->getGit()->tryCommit();
     }
   }
@@ -257,7 +266,9 @@ class ExportJob extends Component implements JobInterface, Serializable
     $this->ensureOutDir();
     $this->ensureSite();
 
-    $this->getGit()->tryPull();
+    if ($this->useGit) {
+      $this->getGit()->tryPull();
+    }
   }
 
   /**
