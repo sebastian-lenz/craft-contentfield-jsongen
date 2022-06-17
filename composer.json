@@ -12,8 +12,10 @@
     "php": "^7.2",
     "craftcms/cms": "^3.6.0",
     "craftcms/redactor": "^2.8.7",
-    "sebastianlenz/contentfield": "dev-release",
     "sebastianlenz/contentfield-json": "dev-master"
+  },
+  "require-dev": {
+    "sebastianlenz/contentfield": "dev-release"
   },
   "autoload": {
     "psr-4": {
